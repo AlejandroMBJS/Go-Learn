@@ -51,8 +51,8 @@ func setupRoutes(app *fiber.App) {
 	app.Get("/tasks", GetTasks)
 	app.Post("/tasks", CreateTask)
 	app.Post("/tasks/:id", UpdateTask)
-	//app.Get("/tasks/:id", GetTaskByID)
-	//app.Delete("/tasks/:id", DeleteTask)
+	app.Get("/tasks/:id", GetTaskByID)
+	app.Delete("/tasks/:id", DeleteTask)
 }
 
 func GetTasks(c *fiber.Ctx) error {
@@ -97,6 +97,27 @@ func UpdateTask(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 	}
 	return c.JSON(updateTask)
+}
+
+func GetTaskByID(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var task Task
+
+	err := collection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&task)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).SendString(err.Error())
+	}
+	return c.JSON(task)
+}
+
+func DeleteTask(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	_, err := collection.DeleteOne(context.Background(), bson.M{"id": id})
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	}
+	return c.SendStatus(fiber.StatusNoContent)
 }
 
 func getMongoURI() string {
